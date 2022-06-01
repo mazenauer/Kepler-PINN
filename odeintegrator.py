@@ -16,12 +16,9 @@ class State:
         self.t = np.array([0])
         self.H = np.array([self.Hamiltonian()])
         self.L = np.array([self.angularMomentum()])
-        #self.A = np.array([self.LRL()])
         
     def showState(self):
         x,y = self.q
-        #fig,ax = plt.subplots()
-        #ax.set_aspect(1)
         plt.scatter([0,x],[0,y])
         plt.xlim(-abs(x)*1.1,abs(x)*1.1)
         plt.ylim(-abs(y)*1.1,abs(y)*1.1)
@@ -90,18 +87,6 @@ class State:
         for i in range(n):
             self.p += b[i]*dt*self.pdot(self.q)
             self.q += bhat[i]*dt*self.qdot(self.p)
-            
-    def GaussLegendreStep(self,dt): #nöd ready!!
-        A = [[1/4,1/4-np.sqrt(3)/6],[1/4+np.sqrt(3)/6]]
-        b = [1/2,1/2]
-        x0 = np.array([self.q,self.p],dtype=float)
-        def f(x):
-            return np.array([self.qdot(x[2:]),self.pdot(x[:2])],dtype=float)
-        def kfunc(k):
-            return np.array([k[0]-f(x0+dt*A[0][0]*k[0]+dt*A[0][1]*k[1]),k[1]-f(x0+dt*A[1][0]*k[0]+dt*A[1][1]*k[1])])
-        k = fsolve(kfunc,np.ones((2,2,2)))
-        x1 = x0+dt*b[0]*k[0]+dt*b[1]*k[1]
-        self.q,self.p = x[:2],x[2:]
     
     def evolve(self,dt,Tmax,saveStats=True,saveNthStep=False,solver=None):
         t = 0
@@ -110,7 +95,7 @@ class State:
         if solver==None:
             solver = self.symmetricRuthStep
         if saveStats:
-            while t-dt<=Tmax: ###Irgendöppis da macht glaub Problem
+            while t-dt<=Tmax:
                 for i in range(saveNthStep):
                     solver(dt)
                     t += dt
@@ -122,7 +107,6 @@ class State:
                 self.H = np.append(self.H,self.Hamiltonian())
                 self.L = np.append(self.L,self.angularMomentum())
              
-            #print(f"Stepsize is {dt}, done {int(Tmax/dt)} steps and saved {int(Tmax/dt/saveNthStep)} of them at steps of {dt*saveNthStep}")
             return self.t,self.x,self.y,self.H,self.L
         
         else:
@@ -130,7 +114,9 @@ class State:
                 solver(dt)
             return
                 
-    def getFunction(self):
-        xfun = interp1d(self.t,self.x,kind="cubic")
-        yfun = interp1d(self.t,self.y,kind="cubic")
-        return xfun,yfun
+    def getFunctions(self):
+        x = interp1d(self.t,self.x,kind="cubic")
+        y = interp1d(self.t,self.y,kind="cubic")
+        px = interp1d(self.t,self.px,kind="cubic")
+        py = interp1d(self.t,self.py,kind="cubic")
+        return x,px,y,py
